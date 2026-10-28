@@ -503,6 +503,37 @@ button,select,textarea,input{font-family:inherit}
 .lbl-summary{flex:1;font-size:13px;color:#292E37;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .lbl-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .lbl-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+
+/* v200: Pane descendant Done/Cancelled filter */
+.pdesc-filter-bar{display:flex;align-items:center;gap:10px;padding:8px 0 4px;font-size:11px;color:#5D7987}
+.pdesc-filter-bar label{display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:600}
+.pdesc-filter-bar input[type=checkbox]{margin:0}
+.pdesc-hidden-note{font-size:10px;color:#9EA0A4;font-style:italic;margin-left:auto}
+
+/* v200: Recent Activity pill */
+.anomaly-pill.recent-pill{background:#FFF8E0;border-color:#E0C860;color:#8B6914}
+.anomaly-pill.recent-pill .anom-count{color:#8B6914}
+.recent-filter-bar{display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid #EEF1F3;background:#F7F8F9}
+.recent-filter-bar button{font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px;border:1px solid #C9CACC;background:#fff;color:#5D7987;cursor:pointer}
+.recent-filter-bar button.active{background:#125462;color:#fff;border-color:#125462}
+
+/* v200: Tag Me button */
+.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;border:1px solid #C9CACC;background:#fff;color:#9EA0A4;cursor:pointer;font-size:11px;line-height:1;padding:0;flex-shrink:0;transition:.12s}
+.tag-me-btn:hover{border-color:#2E99CE;color:#2E99CE;background:#E0F0F8}
+.tag-me-btn.is-tagged{background:#E0F0F8;border-color:#2E99CE;color:#2E99CE}
+
+/* v200: Priority warning modal */
+.pri-warn-overlay{position:fixed;inset:0;z-index:800;background:rgba(41,46,55,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+.pri-warn-modal{background:#fff;border-radius:10px;padding:20px 24px;max-width:400px;width:95vw;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.pri-warn-modal .warn-title{font-size:14px;font-weight:700;color:#854F0B;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pri-warn-modal .warn-body{font-size:13px;color:#292E37;line-height:1.6;margin-bottom:14px}
+.pri-warn-modal .warn-actions{display:flex;align-items:center;gap:10px}
+.pri-warn-modal .warn-actions button{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+
+/* v200: Default tag setup modal */
+.tag-setup-overlay{position:fixed;inset:0;z-index:750;background:rgba(41,46,55,.5);display:none;align-items:center;justify-content:center;padding:20px}
+.tag-setup-overlay.open{display:flex}
+.tag-setup-modal{background:#fff;border-radius:10px;padding:20px 24px;max-width:420px;width:95vw;box-shadow:0 12px 40px rgba(0,0,0,.2)}
 .lbl-status-Backlog{background:#EEF1F3;color:#5D7987}
 .lbl-status-Selected{background:#F1F7EC;color:#3D6B1E}
 .lbl-status-Selected-for-Development{background:#F1F7EC;color:#3D6B1E}
@@ -824,6 +855,35 @@ button,select,textarea,input{font-family:inherit}
   </div>
 </div>
 
+<!-- v200: Tag setup modal -->
+<div class="tag-setup-overlay" id="tag-setup-overlay" onclick="if(event.target===this)closeTagSetup()">
+  <div class="tag-setup-modal">
+    <div style="font-size:14px;font-weight:700;color:#125462;margin-bottom:10px;display:flex;align-items:center;gap:8px">🏷️ Set Your Default Tag</div>
+    <div style="font-size:12px;color:#5D7987;margin-bottom:12px;line-height:1.6">Enter your initials (e.g. MHG). This will be used as a quick one-click label on any issue.</div>
+    <input id="tag-setup-input" type="text" placeholder="e.g. MHG" maxlength="10" style="width:100%;padding:8px 12px;font-size:14px;border:1px solid #C9CACC;border-radius:6px;margin-bottom:10px;text-transform:uppercase;font-weight:700;letter-spacing:.05em">
+    <div id="tag-setup-rename" style="display:none;margin-bottom:10px;padding:10px;background:#FFF8E0;border-radius:6px;font-size:11px;color:#8B6914">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600"><input type="checkbox" id="tag-rename-check"> Also rename all issues with old tag <span id="tag-rename-old" style="font-weight:700"></span> → <span id="tag-rename-new" style="font-weight:700"></span></label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeTagSetup()" style="padding:7px 16px;border-radius:6px;border:1px solid #C9CACC;background:#fff;color:#5D7987;font-size:12px;font-weight:700;cursor:pointer">Cancel</button>
+      <button onclick="saveTagSetup()" style="padding:7px 16px;border-radius:6px;border:none;background:#125462;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- v200: Priority warning modal -->
+<div class="pri-warn-overlay" id="pri-warn-overlay" style="display:none" onclick="if(event.target===this)dismissPriWarn()">
+  <div class="pri-warn-modal">
+    <div class="warn-title">⚠️ Changing someone else's task</div>
+    <div class="warn-body" id="pri-warn-body"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#5D7987;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="pri-warn-suppress"> Don't show this again</label>
+    <div class="warn-actions">
+      <button onclick="dismissPriWarn()" style="border:1px solid #C9CACC;background:#fff;color:#5D7987">Cancel</button>
+      <button onclick="confirmPriWarn()" style="border:none;background:#125462;color:#fff">Change anyway</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOPBAR -->
 <div id="topbar">
   <img src="data:image/png;base64,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Tz11yZIl2aCYN2/BunUbQqqy2+2+9a1v/9a3vjubTA5VutOdfhzJdes2n3jiqQ8//KskSZiFc64oijhKlYrOPffc2QDPe9/73jVrVydJlBcDpanX61WVfeyxx17zmtfneZGmMdHQPQgRJA/84IorPvihcxwPuUEgFb1eb9myZccdd1Qg38aYNE2Logiln0HH22g0Pv3pT7/tre94cvU6ARRlRYqMccyo11MP/ONHP/HV87821en0+/2QSAqZmsWLFx9//PFiqGPDwoVzA56898aYr3zlKwCkoiLPsW0T8KC7VIqUwqc+9angSgY9o9Z6VsUQ5mEI7EgppZTvete7qqpy3kmS7XY7kJzZlSGEXDz7kPx65JFHP/GJT4RT6nQ68+fPP/vss+v1eLuMRUCGFL23XhIIygADVwHaeyg5W38ZAt6Ymy6YGJvHzCzcI48/nKOsYBisFMzASqR1jJ50wqu8ZxlbH02tWHfztbdedMfKayt0BaxBkWOgJXkMfrXh7m/++LP3PvqT9f0HdKMalIP99z94ydwDCamrLNgrGVpxulvvuEko52FJxUuX7A8oiJDLBAgG5abN6yCcEKJRb8Wob9OWbZst1f32gB5sIRGI4D3qtfjss8+emJgYDAaNRiMkLMO6+clPfvKkk175la/8e1hM89w8serJ97znz0466aROp9NsNouiinQSRykgiqJYtmzZwQcfMFt4/7rTTzvqqKNCbFtK2W63QcSCHl3x2MGHHvonf/oXv/zlg1lWANi0afpbF337xBNf8Y//+NGiqEKy0xhTFEW73WbmD33oQyEx5RzC0ULm33uf53mQxTPzo4+veM1rX3vmG8+66657AFTOb57ufvJTn33pMcdffPHF3W4/ipJ2e1THSafXD9UkZ511VpIov5VI/6STTgrcwDl3zz33XHfd9QCSdBtJ92x4pN/Pbrzx5muvvTb4xGVZZlnmnAsuaaiMDruyzRbOhp/YuHGj86HQRJIUYBBhMMhn/FpHgh566KE3v/nNISQVfOK3vOUtYUpsj7Gombm4ZWPNGPVIpgySmNm1x4XET2DxYqeJXTetftKTGJje/avuPniXIxycFEonCqWXcbRs4oDeERtuuPmyJE2szSazldffetm1N/+k1Zg3MTrBzL3O9OTUplZDT2drLPcXLdp5cqq77+6HnrD3KyPoiAGVQjhI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" style="height:26px;width:auto;display:block;flex-shrink:0">
@@ -956,6 +1016,10 @@ button,select,textarea,input{font-family:inherit}
     <button class="anomaly-pill" id="anom-unowned-wip" data-kind="unowned-wip" onclick="openAnomalyModal('unowned-wip')" title="In Progress / Selected work with no assignee">
       <span class="anom-count">0</span>
       <span class="anom-label">Unowned WIP</span>
+    </button>
+    <button class="anomaly-pill recent-pill" id="anom-recent" onclick="openRecentActivityModal()" title="Recently viewed or edited items">
+      <span class="anom-count" id="recent-count">0</span>
+      <span class="anom-label">Recent</span>
     </button>
   </div>
 </div>
@@ -1402,11 +1466,20 @@ let epicFocusProjectFilter = '';
 let showDoneByView = {mytasks:true, myepics:true, team:true, prioritise:true, manager:true};
 // v156: cancelled is a separate axis from done — hidden by default.
 let showCancelled = false;
+// v200: pane descendant filters — hide Done / Cancelled in child tabs
+let paneDescShowDone = false;
+let paneDescShowCancelled = false;
+// v200: default tag for quick tag-me (user's initials)
+let defaultTag = '';
+// v200: recent activity — [{key, summary, type, action:'viewed'|'edited', ts:Date.now()}]
+let recentActivity = [];
+// v200: suppress priority warning for editing other people's tasks
+let suppressPriorityWarning = false;
 
 /* ══ PERSISTENCE ══ */
 function saveAll(){
   try {
-    localStorage.setItem(STOR,JSON.stringify({cfg,locStat,locPri,currentIam,currentProjFilter,currentGroup,currentProjectGroup,teamMembers,adminUsers,groups,groupProjectAssignment,excludedProjects,currentView,currentLevel,rowCollapsed,swimCollapsed,doneDays,commentReadState,priViewMode,priLayoutMode,priMatrixRowCollapsed,priBandCollapsed,showDone,showDoneByView,showCancelled,epicFocusKey,epicFocusUserFilter,epicFocusView,epicFocusProjectFilter,sharedTeams:[...sharedTeams],priProjKeys,localDoneDate,doneDayCollapsed}));
+    localStorage.setItem(STOR,JSON.stringify({cfg,locStat,locPri,currentIam,currentProjFilter,currentGroup,currentProjectGroup,teamMembers,adminUsers,groups,groupProjectAssignment,excludedProjects,currentView,currentLevel,rowCollapsed,swimCollapsed,doneDays,commentReadState,priViewMode,priLayoutMode,priMatrixRowCollapsed,priBandCollapsed,showDone,showDoneByView,showCancelled,epicFocusKey,epicFocusUserFilter,epicFocusView,epicFocusProjectFilter,sharedTeams:[...sharedTeams],priProjKeys,localDoneDate,doneDayCollapsed,paneDescShowDone,paneDescShowCancelled,defaultTag,recentActivity,suppressPriorityWarning}));
   } catch(e) {
     // v195: log persistence failures instead of swallowing — typically quota
     // exceeded (5MB localStorage limit). Without this the user just sees their
@@ -1448,6 +1521,12 @@ if(typeof d.showDone === 'boolean'){
 showDoneByView = {mytasks:showDone, myepics:showDone, team:showDone, prioritise:showDone, manager:showDone};
 // v156: cancelled flag (separate persistence key)
 if(typeof d.showCancelled === 'boolean') showCancelled = d.showCancelled;
+// v200: new state variables
+if(typeof d.paneDescShowDone === 'boolean') paneDescShowDone = d.paneDescShowDone;
+if(typeof d.paneDescShowCancelled === 'boolean') paneDescShowCancelled = d.paneDescShowCancelled;
+if(typeof d.defaultTag === 'string') defaultTag = d.defaultTag;
+if(Array.isArray(d.recentActivity)) recentActivity = d.recentActivity;
+if(typeof d.suppressPriorityWarning === 'boolean') suppressPriorityWarning = d.suppressPriorityWarning;
 // v167: Epic Focus selection persistence
 if(typeof d.epicFocusKey === 'string') epicFocusKey = d.epicFocusKey;
 if(typeof d.epicFocusUserFilter === 'string') epicFocusUserFilter = d.epicFocusUserFilter;
@@ -2677,7 +2756,7 @@ function cardHtml(issue,showActiveBtn=false,compact=false,draggable=false){
   return`<div class="card ${stateCls} ${isActive?"is-active":""} ${isDone?"is-done":""}" style="border-left:3px solid ${lc}" onclick="openPane('${issue.key}')" ${dragAttr}>
     <div class="card-keyrow">${klink(issue.key)}${par}${activeBtnHtml}</div>
     <div class="card-summary">${issue.summary}</div>
-    <div class="card-meta">${tbadge(issue.type)}${pbadge(issue.priority)}${ava(issue.assignee, compact?18:20)}<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">${issueIconRow(issue)}</span></div>
+    <div class="card-meta">${tbadge(issue.type)}${pbadge(issue.priority)}${ava(issue.assignee, compact?18:20)}<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">${typeof tagMeCardHtml==='function'?tagMeCardHtml(issue):''}${issueIconRow(issue)}</span></div>
   </div>`;
 }
 
@@ -3228,6 +3307,8 @@ function updateAnomalyCounters(){
     if(cEl) cEl.textContent=count;
     pill.classList.toggle('has-issues', count>0);
   }
+  // v200: update recent activity counter
+  if(typeof updateRecentCount === 'function') updateRecentCount();
 }
 
 function openAnomalyModal(kind){
@@ -4742,6 +4823,7 @@ function openPane(key){
       openIssue = parsed; paneTab = 'main';
       renderPaneHdr(parsed); renderPaneTabs(); renderPaneMain();
       if(typeof markCommentsRead === 'function') markCommentsRead(key);
+      if(typeof trackRecentActivity === 'function') trackRecentActivity(key, 'viewed');
     }).catch(e => {
       document.getElementById("pane-hdr").innerHTML = '<div style="padding:14px;color:#fff;font-size:13px">Failed to load '+key+': '+(e.message||e)+'</div>';
     });
@@ -4752,6 +4834,8 @@ function openPane(key){
   document.getElementById("pane-overlay").classList.add("open");
   // Mark this issue's comments as read when opened
   if(typeof markCommentsRead === 'function') markCommentsRead(key);
+  // v200: track recent view
+  if(typeof trackRecentActivity === 'function') trackRecentActivity(key, 'viewed');
 }
 function closePaneOverlay(){document.getElementById("pane-overlay").classList.remove("open");openIssue=null;}
 
@@ -4914,8 +4998,18 @@ async function renderPaneDescendants(spec){
   // Also push the merged result back into the cache so the tab count is
   // accurate without re-fetching.
   if (descendantsCache[i.key]){ descendantsCache[i.key][spec.tabKey] = items; renderPaneTabs(); }
-  const list = items || [];
+  const allItems = items || [];
   const isDirectChildTab = spec.walk.length === 1;
+  // v200: filter Done / Cancelled from descendant list
+  const hiddenDone = allItems.filter(it => !paneDescShowDone && normStatus(it.status) === 'Done' && !isCancelledStatus(it.status));
+  const hiddenCancelled = allItems.filter(it => !paneDescShowCancelled && isCancelledStatus(it.status));
+  const hiddenCount = hiddenDone.length + hiddenCancelled.length;
+  const list = allItems.filter(it => {
+    if (!paneDescShowDone && normStatus(it.status) === 'Done' && !isCancelledStatus(it.status)) return false;
+    if (!paneDescShowCancelled && isCancelledStatus(it.status)) return false;
+    return true;
+  });
+  const totalCount = allItems.length;
   // v153: Surface a + Create button on every descendant tab — not just
   // direct-child tabs. For non-direct (e.g. Initiative → Tasks two levels
   // down), createDescendantFromPane opens the Create modal pre-filled with
@@ -4923,9 +5017,17 @@ async function renderPaneDescendants(spec){
   // level before finishing.
   const createLabel = spec.label.replace(/s$/, '').replace(/Epics\/Milestone$/,'epic/milestone').replace(/\bEpic\/Milestone\b/, 'epic/milestone');
   const createBtn = `<button onclick="createDescendantFromPane('${spec.tabKey}','${i.key}')" class="primary-btn" style="font-size:11px;padding:5px 14px">+ Create ${createLabel.toLowerCase()}</button>`;
+  // v200: filter bar
+  const filterBar = `<div class="pdesc-filter-bar">
+    <label><input type="checkbox" ${paneDescShowDone?'checked':''} onchange="paneDescShowDone=this.checked;saveAll();setPaneTab(paneTab)"> Show Done</label>
+    <label><input type="checkbox" ${paneDescShowCancelled?'checked':''} onchange="paneDescShowCancelled=this.checked;saveAll();setPaneTab(paneTab)"> Show Cancelled</label>
+    ${hiddenCount > 0 ? `<span class="pdesc-hidden-note">${hiddenCount} hidden of ${totalCount}</span>` : ''}
+  </div>`;
   let html = '';
-  if(!list.length){
+  if(!list.length && !allItems.length){
     html = `<div style="padding:18px;text-align:center;color:#9EA0A4;font-size:13px;font-style:italic">No ${spec.label.toLowerCase()} found under ${i.key}.</div>`;
+  } else if(!list.length){
+    html = `<div style="padding:18px;text-align:center;color:#9EA0A4;font-size:13px;font-style:italic">All ${totalCount} items are hidden by filters.</div>`;
   } else {
     // Sort by parent_key so items under the same parent cluster, then by status/key
     const grouped = {};
@@ -4951,7 +5053,7 @@ async function renderPaneDescendants(spec){
       }).join('');
     }
   }
-  document.getElementById('pdesc-list').innerHTML = html;
+  document.getElementById('pdesc-list').innerHTML = filterBar + html;
   if(createBtn){
     const wrap = document.createElement('div');
     wrap.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px solid #EEF1F3;display:flex;justify-content:flex-start';
@@ -5312,7 +5414,7 @@ async function renderPaneMain(){
     <div class="pane-section">
       <div class="pane-section-title">Priority</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px">
-        ${Object.keys(PC).map(p=>{const c=PC[p];return`<button class="edit-option" style="${i.priority===p?`border:2px solid ${c.d};background:${c.bg};color:${c.c}`:""}" onclick="doPanePriority('${p}')">${p}</button>`;}).join("")}
+        ${Object.keys(PC).map(p=>{const c=PC[p];return`<button class="edit-option" style="${i.priority===p?`border:2px solid ${c.d};background:${c.bg};color:${c.c}`:""}" onclick="doPanePriorityWithWarning('${p}')">${p}</button>`;}).join("")}
       </div>
     </div>
     <div class="pane-section" id="pane-labels-section">
@@ -5943,6 +6045,7 @@ async function doPaneStatus(val){
   locStat[openIssue.key]=val;
   openIssue={...openIssue,status:val};
   saveAll();
+  if(typeof trackRecentActivity === 'function') trackRecentActivity(openIssue.key, 'edited');
   _syncPriCachesFromOpenIssue();
   // v155: when an item moves to Done, clear it from the assignee's active
   // task slot. The "active" flag is the assignee's "what I'm working on
@@ -5967,6 +6070,7 @@ async function doPanePriority(val){
   locPri[openIssue.key]=val;
   openIssue={...openIssue,priority:val};
   saveAll();
+  if(typeof trackRecentActivity === 'function') trackRecentActivity(openIssue.key, 'edited');
   _syncPriCachesFromOpenIssue();
   renderPaneHdr(openIssue);renderPaneMain();renderMain();
   await updatePriority(openIssue.key,val);
@@ -6025,11 +6129,15 @@ function renderPaneLabels(issue){
   const chips = labels.length
     ? labels.map(l => `<span class="pane-lbl-chip" data-label="${_escHtml(l)}">${_escHtml(l)}<button class="pane-lbl-x" title="Remove" onclick="event.stopPropagation();paneRemoveLabel('${issue.key}','${(l||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">✕</button></span>`).join('')
     : '<span class="pane-lbl-empty">No labels yet.</span>';
+  const tagBtn = typeof tagMePaneHtml === 'function' ? tagMePaneHtml(issue) : '';
+  const setupLink = defaultTag ? `<button onclick="event.stopPropagation();openTagSetup()" style="font-size:10px;color:#9EA0A4;background:none;border:none;cursor:pointer;padding:2px 4px" title="Change default tag">⚙ ${_escHtml(defaultTag)}</button>` : `<button onclick="event.stopPropagation();openTagSetup()" style="font-size:10px;color:#2E99CE;background:none;border:none;cursor:pointer;padding:2px 4px" title="Set up quick tag">⚙ Set tag</button>`;
   return `<div class="pane-lbl-wrap" id="pane-lbl-wrap">
     ${chips}
+    ${tagBtn}
     <span id="pane-lbl-addslot">
       <button class="pane-lbl-addbtn" onclick="event.stopPropagation();paneOpenLabelInput('${issue.key}')">＋ Add label</button>
     </span>
+    ${setupLink}
   </div>`;
 }
 
@@ -6117,6 +6225,7 @@ async function paneAddLabel(key, label){
         lblAllLabels.push(safe);
         lblAllLabels.sort();
       }
+      if(typeof trackRecentActivity === 'function') trackRecentActivity(key, 'edited');
     }
   } catch (e) {
     appLogMsg('warn', 'labels', 'Add label error: ' + e.message);
@@ -14878,6 +14987,288 @@ function renderMeetings() {
     renderMtgStaging('ready');
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v200: FEATURE 2 — RECENT ACTIVITY PILL
+   Track recently viewed/edited items and show them in a modal.
+   ══════════════════════════════════════════════════════════════════════ */
+
+const RECENT_MAX = 100; // Keep last 100 entries
+
+function trackRecentActivity(key, action){
+  if(!key) return;
+  const issue = (allIssues||[]).map(gm).find(x=>x.key===key);
+  const entry = {
+    key: key,
+    summary: issue ? issue.summary : key,
+    type: issue ? issue.type : '',
+    assignee: issue ? issue.assignee : '',
+    action: action, // 'viewed' or 'edited'
+    ts: Date.now()
+  };
+  // Remove duplicate entry for same key+action within 60s to avoid spam
+  recentActivity = recentActivity.filter(r => !(r.key===key && r.action===action && (Date.now()-r.ts)<60000));
+  recentActivity.unshift(entry);
+  if(recentActivity.length > RECENT_MAX) recentActivity = recentActivity.slice(0, RECENT_MAX);
+  saveAll();
+  updateRecentCount();
+}
+
+function updateRecentCount(){
+  const el = document.getElementById('recent-count');
+  if(el) el.textContent = recentActivity.length;
+  const pill = document.getElementById('anom-recent');
+  if(pill) pill.classList.toggle('has-issues', recentActivity.length > 0);
+}
+
+let recentFilterMode = 'all'; // 'all', 'viewed', 'edited'
+
+function openRecentActivityModal(){
+  recentFilterMode = 'all';
+  document.getElementById('anomaly-title').textContent = 'Recent Activity (' + recentActivity.length + ')';
+  renderRecentActivityBody();
+  document.getElementById('anomaly-overlay').classList.add('open');
+}
+
+function renderRecentActivityBody(){
+  const el = document.getElementById('anomaly-body');
+  if(!el) return;
+
+  const filterBar = `<div class="recent-filter-bar">
+    <button class="${recentFilterMode==='all'?'active':''}" onclick="recentFilterMode='all';renderRecentActivityBody()">All</button>
+    <button class="${recentFilterMode==='viewed'?'active':''}" onclick="recentFilterMode='viewed';renderRecentActivityBody()">Viewed</button>
+    <button class="${recentFilterMode==='edited'?'active':''}" onclick="recentFilterMode='edited';renderRecentActivityBody()">Edited</button>
+    ${recentActivity.length?`<button onclick="if(confirm('Clear all recent activity?')){recentActivity=[];saveAll();updateRecentCount();closeAnomalyModal()}" style="margin-left:auto;background:none;border:none;color:#9EA0A4;font-size:11px;cursor:pointer;font-weight:600">Clear all</button>`:''}
+  </div>`;
+
+  const filtered = recentFilterMode === 'all' ? recentActivity : recentActivity.filter(r => r.action === recentFilterMode);
+
+  if(!filtered.length){
+    el.innerHTML = filterBar + '<div style="text-align:center;padding:48px 20px;color:#9EA0A4;font-size:13px">No recent activity yet.</div>';
+    return;
+  }
+
+  const rows = filtered.map(r => {
+    const ago = _timeAgo(r.ts);
+    const actionBadge = r.action === 'edited'
+      ? '<span style="font-size:9px;font-weight:700;background:#E0F0F8;color:#125462;padding:2px 7px;border-radius:10px;white-space:nowrap">edited</span>'
+      : '<span style="font-size:9px;font-weight:700;background:#F4F4F5;color:#73777C;padding:2px 7px;border-radius:10px;white-space:nowrap">viewed</span>';
+    const typeBadge = r.type ? `<span style="font-size:9px;font-weight:700;background:#F4F4F5;color:#73777C;padding:2px 7px;border-radius:10px;white-space:nowrap">${r.type}</span>` : '';
+    return `<div class="anomaly-row" onclick="closeAnomalyModal();openPane('${r.key}')">
+      <span style="font-size:10px;font-weight:700;color:#257AA5;font-family:monospace;min-width:78px">${r.key}</span>
+      ${actionBadge}
+      ${typeBadge}
+      <span style="font-size:12px;color:#292E37;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_escHtml(r.summary)}</span>
+      <span style="font-size:10px;color:#9EA0A4;white-space:nowrap">${ago}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = filterBar + rows;
+}
+
+function _timeAgo(ts){
+  const diff = Date.now() - ts;
+  if(diff < 60000) return 'just now';
+  if(diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if(diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return Math.floor(diff/86400000) + 'd ago';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v200: FEATURE 3 — QUICK TAG ME SYSTEM
+   One-click tag/untag icon on cards and pane, default tag setup, bulk rename.
+   ══════════════════════════════════════════════════════════════════════ */
+
+function openTagSetup(){
+  const inp = document.getElementById('tag-setup-input');
+  if(inp){
+    inp.value = defaultTag || '';
+    // Listen for changes to show the rename option
+    inp.oninput = function(){
+      const renameDiv = document.getElementById('tag-setup-rename');
+      const newVal = (this.value||'').trim().toUpperCase().replace(/\s+/g,'-');
+      if(defaultTag && newVal && newVal !== defaultTag.toUpperCase() && renameDiv){
+        renameDiv.style.display = 'block';
+        const oldEl = document.getElementById('tag-rename-old');
+        const newEl = document.getElementById('tag-rename-new');
+        if(oldEl) oldEl.textContent = defaultTag;
+        if(newEl) newEl.textContent = newVal;
+      } else if(renameDiv){
+        renameDiv.style.display = 'none';
+      }
+    };
+  }
+  // Show rename option if old tag exists
+  const renameDiv = document.getElementById('tag-setup-rename');
+  if(renameDiv) renameDiv.style.display = 'none';
+  const renameCheck = document.getElementById('tag-rename-check');
+  if(renameCheck) renameCheck.checked = false;
+  document.getElementById('tag-setup-overlay').classList.add('open');
+  setTimeout(()=>{ if(inp) inp.focus(); }, 100);
+}
+
+function closeTagSetup(){
+  document.getElementById('tag-setup-overlay').classList.remove('open');
+}
+
+function saveTagSetup(){
+  const inp = document.getElementById('tag-setup-input');
+  const val = (inp ? inp.value : '').trim().toUpperCase().replace(/\s+/g,'-');
+  if(!val){ alert('Please enter your initials.'); return; }
+  const oldTag = defaultTag;
+  defaultTag = val;
+  saveAll();
+
+  // Check for bulk rename
+  const renameCheck = document.getElementById('tag-rename-check');
+  if(renameCheck && renameCheck.checked && oldTag && oldTag !== val){
+    closeTagSetup();
+    bulkRenameLabel(oldTag, val);
+    return;
+  }
+  closeTagSetup();
+  // Refresh views
+  if(openIssue) renderPaneMain();
+  renderMain();
+}
+
+function tagMeCardHtml(issue){
+  if(!defaultTag) return `<button class="tag-me-btn" onclick="event.stopPropagation();openTagSetup()" title="Set up your default tag first">🏷</button>`;
+  const labels = Array.isArray(issue.labels) ? issue.labels : [];
+  const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
+  return `<button class="tag-me-btn ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMe('${issue.key}')" title="${isTagged?'Remove your tag ('+defaultTag+')':'Tag with '+defaultTag}">${isTagged?'★':'☆'}</button>`;
+}
+
+async function toggleTagMe(key){
+  const issue = (allIssues||[]).find(i=>i.key===key);
+  if(!issue) return;
+  const labels = Array.isArray(issue.labels) ? issue.labels : [];
+  const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
+
+  // We need to set openIssue temporarily for paneAddLabel/paneRemoveLabel
+  const wasOpen = openIssue;
+  const wasPaneVisible = document.getElementById('pane-overlay')?.classList.contains('open');
+
+  // Use direct Jira API instead of paneAddLabel to avoid pane dependency
+  if(isTagged){
+    // Remove
+    const actual = labels.find(l => l.toLowerCase() === defaultTag.toLowerCase());
+    const updated = labels.filter(l => l.toLowerCase() !== defaultTag.toLowerCase());
+    issue.labels = updated;
+    renderMain();
+    if(wasOpen && openIssue && openIssue.key === key){ openIssue.labels = updated; renderPaneMain(); }
+    try {
+      const r = await jiraPut('/rest/api/3/issue/' + key, { update: { labels: [{ remove: actual }] } });
+      if(!r.ok){ issue.labels = labels; renderMain(); if(wasOpen && openIssue && openIssue.key === key){ openIssue.labels = labels; renderPaneMain(); } }
+    } catch(e){ issue.labels = labels; renderMain(); }
+    trackRecentActivity(key, 'edited');
+  } else {
+    // Add
+    const safe = defaultTag.replace(/\s+/g,'-');
+    issue.labels = labels.concat([safe]);
+    renderMain();
+    if(wasOpen && openIssue && openIssue.key === key){ openIssue.labels = labels.concat([safe]); renderPaneMain(); }
+    try {
+      const r = await jiraPut('/rest/api/3/issue/' + key, { update: { labels: [{ add: safe }] } });
+      if(!r.ok){ issue.labels = labels; renderMain(); if(wasOpen && openIssue && openIssue.key === key){ openIssue.labels = labels; renderPaneMain(); } }
+      else { if(typeof lblAllLabels!=='undefined' && !lblAllLabels.includes(safe)){ lblAllLabels.push(safe); lblAllLabels.sort(); } }
+    } catch(e){ issue.labels = labels; renderMain(); }
+    trackRecentActivity(key, 'edited');
+  }
+}
+
+function tagMePaneHtml(issue){
+  if(!defaultTag) return `<button class="tag-me-btn" onclick="event.stopPropagation();openTagSetup()" title="Set up your default tag" style="margin-left:4px">🏷</button>`;
+  const labels = Array.isArray(issue.labels) ? issue.labels : [];
+  const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
+  return `<button class="tag-me-btn ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMePane()" title="${isTagged?'Remove your tag ('+defaultTag+')':'Quick add '+defaultTag+' label'}" style="margin-left:4px">${isTagged?'★ '+defaultTag:'☆ '+defaultTag}</button>`;
+}
+
+async function toggleTagMePane(){
+  if(!openIssue) return;
+  const key = openIssue.key;
+  const labels = Array.isArray(openIssue.labels) ? openIssue.labels : [];
+  const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
+  if(isTagged){
+    const actual = labels.find(l => l.toLowerCase() === defaultTag.toLowerCase());
+    if(actual) await paneRemoveLabel(key, actual);
+  } else {
+    await paneAddLabel(key, defaultTag);
+  }
+  trackRecentActivity(key, 'edited');
+}
+
+async function bulkRenameLabel(oldLabel, newLabel){
+  if(!oldLabel || !newLabel) return;
+  const issues = (allIssues||[]).filter(i => Array.isArray(i.labels) && i.labels.some(l => l.toLowerCase() === oldLabel.toLowerCase()));
+  if(!issues.length){ alert('No issues found with label "'+oldLabel+'".'); return; }
+  if(!confirm('Rename label "'+oldLabel+'" → "'+newLabel+'" on '+issues.length+' issue(s)?')) return;
+
+  let ok=0, fail=0;
+  for(const issue of issues){
+    try {
+      const r = await jiraPut('/rest/api/3/issue/' + issue.key, {
+        update: { labels: [{ remove: oldLabel }, { add: newLabel }] }
+      });
+      if(r.ok || r.status===204){
+        // Update local cache
+        issue.labels = issue.labels.filter(l => l.toLowerCase() !== oldLabel.toLowerCase()).concat([newLabel]);
+        ok++;
+      } else { fail++; }
+    } catch(e){ fail++; }
+  }
+  alert('Renamed '+ok+' issue(s). ' + (fail ? fail+' failed.' : ''));
+  if(typeof lblAllLabels !== 'undefined'){
+    if(!lblAllLabels.includes(newLabel)){ lblAllLabels.push(newLabel); lblAllLabels.sort(); }
+  }
+  renderMain();
+  if(openIssue) renderPaneMain();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v200: FEATURE 4 — PRIORITY EDIT WARNING
+   Warn when changing priority on a task not assigned to you.
+   ══════════════════════════════════════════════════════════════════════ */
+
+let _pendingPriVal = null;
+
+function doPanePriorityWithWarning(val){
+  if(suppressPriorityWarning || !openIssue){
+    doPanePriority(val);
+    return;
+  }
+  // Check if current user is the assignee
+  const assignee = (openIssue.assignee || '').toLowerCase();
+  const me = (currentIam || '').toLowerCase();
+  if(!me || !assignee || assignee === 'unassigned' || assignee === me){
+    doPanePriority(val);
+    return;
+  }
+  // Show warning
+  _pendingPriVal = val;
+  const body = document.getElementById('pri-warn-body');
+  if(body) body.innerHTML = `You are about to change the priority of <strong>${openIssue.key}</strong> which is assigned to <strong>${openIssue.assignee}</strong>. Are you sure?`;
+  const suppress = document.getElementById('pri-warn-suppress');
+  if(suppress) suppress.checked = false;
+  document.getElementById('pri-warn-overlay').style.display = 'flex';
+}
+
+function dismissPriWarn(){
+  document.getElementById('pri-warn-overlay').style.display = 'none';
+  _pendingPriVal = null;
+}
+
+function confirmPriWarn(){
+  const suppress = document.getElementById('pri-warn-suppress');
+  if(suppress && suppress.checked){
+    suppressPriorityWarning = true;
+    saveAll();
+  }
+  document.getElementById('pri-warn-overlay').style.display = 'none';
+  if(_pendingPriVal) doPanePriority(_pendingPriVal);
+  _pendingPriVal = null;
+}
+
 </script>
 </body>
 </html>
