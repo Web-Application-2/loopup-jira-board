@@ -518,10 +518,10 @@ button,select,textarea,input{font-family:inherit}
 .recent-filter-bar button.active{background:#125462;color:#fff;border-color:#125462}
 
 /* v200: Tag Me button */
-.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;border:1px solid #C9CACC;background:#fff;color:#9EA0A4;cursor:pointer;font-size:11px;line-height:1;padding:0;flex-shrink:0;transition:.12s;overflow:hidden}
-.tag-me-btn.has-text{width:auto;height:auto;padding:3px 10px;border-radius:12px;gap:3px;white-space:nowrap}
+.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:4px;border:1px solid #D4B44A;background:#FFF8E1;color:#8B7520;cursor:pointer;font-size:9px;font-weight:700;line-height:1;padding:0 3px;flex-shrink:0;transition:.12s;white-space:nowrap;letter-spacing:.3px}
+.tag-me-btn.has-text{width:auto;height:auto;padding:3px 10px;border-radius:12px;gap:3px;font-size:11px;letter-spacing:0}
 .tag-me-btn:hover{border-color:#2E99CE;color:#2E99CE;background:#E0F0F8}
-.tag-me-btn.is-tagged{background:#E0F0F8;border-color:#2E99CE;color:#2E99CE}
+.tag-me-btn.is-tagged{background:#E0F0F8;border-color:#2E99CE;color:#2E99CE;font-size:11px}
 
 /* v200: Priority warning modal */
 .pri-warn-overlay{position:fixed;inset:0;z-index:800;background:rgba(41,46,55,.5);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -15137,7 +15137,7 @@ function tagMeCardHtml(issue){
   if(!defaultTag) return `<button class="tag-me-btn" onclick="event.stopPropagation();openTagSetup()" title="Set up your default tag first">🏷</button>`;
   const labels = Array.isArray(issue.labels) ? issue.labels : [];
   const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
-  return `<button class="tag-me-btn ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMe('${issue.key}')" title="${isTagged?'Remove your tag ('+defaultTag+')':'Tag with '+defaultTag}">${isTagged?'★':'☆'}</button>`;
+  return `<button class="tag-me-btn ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMe('${issue.key}')" title="${isTagged?'Remove your tag ('+defaultTag+')':'Tag with '+defaultTag}">${isTagged?'★':defaultTag}</button>`;
 }
 
 async function toggleTagMe(key){
