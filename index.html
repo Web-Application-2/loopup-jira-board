@@ -518,7 +518,8 @@ button,select,textarea,input{font-family:inherit}
 .recent-filter-bar button.active{background:#125462;color:#fff;border-color:#125462}
 
 /* v200: Tag Me button */
-.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;border:1px solid #C9CACC;background:#fff;color:#9EA0A4;cursor:pointer;font-size:11px;line-height:1;padding:0;flex-shrink:0;transition:.12s}
+.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;border:1px solid #C9CACC;background:#fff;color:#9EA0A4;cursor:pointer;font-size:11px;line-height:1;padding:0;flex-shrink:0;transition:.12s;overflow:hidden}
+.tag-me-btn.has-text{width:auto;height:auto;padding:3px 10px;border-radius:12px;gap:3px;white-space:nowrap}
 .tag-me-btn:hover{border-color:#2E99CE;color:#2E99CE;background:#E0F0F8}
 .tag-me-btn.is-tagged{background:#E0F0F8;border-color:#2E99CE;color:#2E99CE}
 
@@ -15181,7 +15182,7 @@ function tagMePaneHtml(issue){
   if(!defaultTag) return `<button class="tag-me-btn" onclick="event.stopPropagation();openTagSetup()" title="Set up your default tag" style="margin-left:4px">🏷</button>`;
   const labels = Array.isArray(issue.labels) ? issue.labels : [];
   const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
-  return `<button class="tag-me-btn ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMePane()" title="${isTagged?'Remove your tag ('+defaultTag+')':'Quick add '+defaultTag+' label'}" style="margin-left:4px">${isTagged?'★ '+defaultTag:'☆ '+defaultTag}</button>`;
+  return `<button class="tag-me-btn has-text ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMePane()" title="${isTagged?'Remove your tag ('+defaultTag+')':'Quick add '+defaultTag+' label'}" style="margin-left:4px">${isTagged?'★ '+defaultTag:'☆ '+defaultTag}</button>`;
 }
 
 async function toggleTagMePane(){
