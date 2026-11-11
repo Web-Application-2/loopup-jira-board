@@ -981,6 +981,14 @@ button,select,textarea,input{font-family:inherit}
   <label id="show-cancelled-wrap" style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer" title="Include items in a Cancelled status">
     <input type="checkbox" id="show-cancelled-global" onchange="onGlobalShowCancelledChange(this)"> Show Cancelled
   </label>
+  <!-- v201: Maintenance filter — tri-state: all / hide / only -->
+  <span id="maintenance-filter-wrap" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin-left:4px">
+    <select id="maintenance-filter-ctrl" onchange="onMaintenanceFilterChange(this.value)" style="font-size:11px;padding:2px 4px;border:1px solid #C9CACC;border-radius:4px;background:#fff;cursor:pointer">
+      <option value="all">🔁 All tasks</option>
+      <option value="hide">Hide maintenance</option>
+      <option value="only">Only maintenance</option>
+    </select>
+  </span>
   <!-- Unassigned only (after Show Done) -->
   <label id="unassigned-filter-wrap" style="display:none;align-items:center;gap:5px;font-size:12px;cursor:pointer">
     <input type="checkbox" id="unassigned-filter" onchange="renderMain()"> Unassigned only
@@ -1478,11 +1486,15 @@ let defaultTag = '';
 let recentActivity = [];
 // v200: suppress priority warning for editing other people's tasks
 let suppressPriorityWarning = false;
+// v201: maintenance / recurring flag — keys flagged as maintenance
+let maintenanceKeys = new Set();
+// v201: maintenance filter — 'all' (show everything, flagged), 'hide', 'only'
+let maintenanceFilter = 'all';
 
 /* ══ PERSISTENCE ══ */
 function saveAll(){
   try {
-    localStorage.setItem(STOR,JSON.stringify({cfg,locStat,locPri,currentIam,currentProjFilter,currentGroup,currentProjectGroup,teamMembers,adminUsers,groups,groupProjectAssignment,excludedProjects,currentView,currentLevel,rowCollapsed,swimCollapsed,doneDays,commentReadState,priViewMode,priLayoutMode,priMatrixRowCollapsed,priBandCollapsed,showDone,showDoneByView,showCancelled,epicFocusKey,epicFocusUserFilter,epicFocusView,epicFocusProjectFilter,sharedTeams:[...sharedTeams],priProjKeys,localDoneDate,doneDayCollapsed,paneDescShowDone,paneDescShowCancelled,defaultTag,recentActivity,suppressPriorityWarning}));
+    localStorage.setItem(STOR,JSON.stringify({cfg,locStat,locPri,currentIam,currentProjFilter,currentGroup,currentProjectGroup,teamMembers,adminUsers,groups,groupProjectAssignment,excludedProjects,currentView,currentLevel,rowCollapsed,swimCollapsed,doneDays,commentReadState,priViewMode,priLayoutMode,priMatrixRowCollapsed,priBandCollapsed,showDone,showDoneByView,showCancelled,epicFocusKey,epicFocusUserFilter,epicFocusView,epicFocusProjectFilter,sharedTeams:[...sharedTeams],priProjKeys,localDoneDate,doneDayCollapsed,paneDescShowDone,paneDescShowCancelled,defaultTag,recentActivity,suppressPriorityWarning,maintenanceKeys:[...maintenanceKeys],maintenanceFilter}));
   } catch(e) {
     // v195: log persistence failures instead of swallowing — typically quota
     // exceeded (5MB localStorage limit). Without this the user just sees their
@@ -1530,6 +1542,9 @@ if(typeof d.paneDescShowCancelled === 'boolean') paneDescShowCancelled = d.paneD
 if(typeof d.defaultTag === 'string') defaultTag = d.defaultTag;
 if(Array.isArray(d.recentActivity)) recentActivity = d.recentActivity;
 if(typeof d.suppressPriorityWarning === 'boolean') suppressPriorityWarning = d.suppressPriorityWarning;
+// v201: maintenance keys and filter
+if(Array.isArray(d.maintenanceKeys)) maintenanceKeys = new Set(d.maintenanceKeys);
+if(typeof d.maintenanceFilter === 'string' && ['all','hide','only'].includes(d.maintenanceFilter)) maintenanceFilter = d.maintenanceFilter;
 // v167: Epic Focus selection persistence
 if(typeof d.epicFocusKey === 'string') epicFocusKey = d.epicFocusKey;
 if(typeof d.epicFocusUserFilter === 'string') epicFocusUserFilter = d.epicFocusUserFilter;
@@ -2693,6 +2708,8 @@ function syncPerViewShowDoneCheckboxes() {
   syncGlobalShowDoneCheckbox();
   // v156: also keep the Show Cancelled checkbox in sync
   try { syncGlobalShowCancelledCheckbox(); } catch {}
+  // v201: sync maintenance filter dropdown
+  try { const mf=document.getElementById('maintenance-filter-ctrl'); if(mf) mf.value=maintenanceFilter; } catch {}
   const myepicsCb = document.getElementById('myepics-show-done');
   if(myepicsCb) myepicsCb.checked = !!showDone;
   const priCb = document.getElementById('pri-show-done');
@@ -2758,6 +2775,9 @@ function getFiltered(forPerson, opts){
     if(!(opts && opts.includeDone) && !showDone && normStatus(i.status)==='Done' && normStatus(statFilter)!=='Done') return false;
     // v156: Show Cancelled filter — hide cancelled items unless toggle is on
     if(!showCancelled && isCancelledStatus(i.status) && !isCancelledStatus(statFilter)) return false;
+    // v201: maintenance filter
+    if(maintenanceFilter === 'hide' && isMaintenanceIssue(i)) return false;
+    if(maintenanceFilter === 'only' && !isMaintenanceIssue(i)) return false;
     return true;
   });
 }
@@ -2779,7 +2799,7 @@ function cardHtml(issue,showActiveBtn=false,compact=false,draggable=false){
   return`<div class="card ${stateCls} ${isActive?"is-active":""} ${isDone?"is-done":""}" style="border-left:3px solid ${lc}" onclick="openPane('${issue.key}')" ${dragAttr}>
     <div class="card-keyrow">${klink(issue.key)}${par}${activeBtnHtml}</div>
     <div class="card-summary">${issue.summary}</div>
-    <div class="card-meta">${tbadge(issue.type)}${pbadge(issue.priority)}${ava(issue.assignee, compact?18:20)}<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">${typeof tagMeCardHtml==='function'?tagMeCardHtml(issue):''}${issueIconRow(issue)}</span></div>
+    <div class="card-meta">${tbadge(issue.type)}${pbadge(issue.priority)}${ava(issue.assignee, compact?18:20)}<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto">${maintenanceIconHtml(issue)}${typeof tagMeCardHtml==='function'?tagMeCardHtml(issue):''}${issueIconRow(issue)}</span></div>
   </div>`;
 }
 
@@ -5443,6 +5463,20 @@ async function renderPaneMain(){
     <div class="pane-section" id="pane-labels-section">
       <div class="pane-section-title">Labels</div>
       ${renderPaneLabels(i)}
+    </div>
+    <!-- v201: Maintenance / Recurring toggle -->
+    <div class="pane-section">
+      <div class="pane-section-title" style="display:flex;align-items:center;gap:8px">
+        <span>Maintenance</span>
+        <span style="font-size:11px;color:#9EA0A4">${isMaintenanceIssue(i) && !maintenanceKeys.has(i.key) ? '(inherited from parent)' : ''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="event.stopPropagation();toggleMaintenance('${i.key}')"
+          style="font-size:12px;padding:5px 14px;border-radius:6px;cursor:pointer;font-weight:600;border:1px solid ${maintenanceKeys.has(i.key)?'#8B7520':'#C9CACC'};background:${maintenanceKeys.has(i.key)?'#FFF8E0':'#F7F8F9'};color:${maintenanceKeys.has(i.key)?'#8B7520':'#5D7987'}">
+          ${maintenanceKeys.has(i.key) ? '🔁 Maintenance (click to remove)' : '🔁 Mark as Maintenance'}
+        </button>
+        ${isMaintenanceIssue(i) ? '<span style="font-size:11px;color:#8B7520;font-weight:600">🔁 Active</span>' : ''}
+      </div>
     </div>
     <div class="pane-section">
       <div class="pane-section-title" style="display:flex;align-items:center">
@@ -10097,6 +10131,9 @@ function renderPriBoard() {
   let epics = [...priEpics].map(gm).filter(e => ['Epic','Milestone'].includes(e.type));
   if(!showDonePri) epics = epics.filter(e => normStatus(e.status) !== 'Done');
   if (unassignedOnly) epics = epics.filter(e => e.assignee === 'Unassigned' || (byEpic[e.key]||[]).length > 0);
+  // v201: maintenance filter for epics — hide maintenance epics, or show only
+  if(maintenanceFilter === 'hide') epics = epics.filter(e => !isMaintenanceIssue(e));
+  if(maintenanceFilter === 'only') epics = epics.filter(e => isMaintenanceIssue(e));
   // v177: apply the user's saved column order for this project (drag-reorder)
   epics = applyPriEpicOrder(epics);
 
@@ -10105,7 +10142,10 @@ function renderPriBoard() {
 
   // Render epic columns
   epics.forEach(epic => {
-    const epicTasks = byEpic[epic.key] || [];
+    let epicTasks = byEpic[epic.key] || [];
+    // v201: maintenance filter for tasks within epics (vertical view)
+    if(maintenanceFilter === 'hide') epicTasks = epicTasks.filter(t => !isMaintenanceIssue(t));
+    if(maintenanceFilter === 'only') epicTasks = epicTasks.filter(t => isMaintenanceIssue(t));
     // Find parent chain
     const initiative = priEpics.find(e => e.key === epic.parent_key);
     const legend = initiative ? priEpics.find(e => e.key === initiative.parent_key) : null;
@@ -10559,6 +10599,9 @@ async function renderPriEpicMatrix(){
   let epics = [...(priEpics||[])].map(gm).filter(e => ['Epic','Milestone'].includes(e.type));
   if (!showCancelled) epics = epics.filter(e => !isCancelledStatus(e.status)); // v181
   if (unassignedOnly) epics = epics.filter(e => e.assignee === 'Unassigned');
+  // v201: maintenance filter for epics (team-epic view)
+  if(maintenanceFilter === 'hide') epics = epics.filter(e => !isMaintenanceIssue(e));
+  if(maintenanceFilter === 'only') epics = epics.filter(e => isMaintenanceIssue(e));
   // v191: keep Done-inclusive list so the Done row header count is honest
   // even when Show Done is unchecked. Body cards are still gated on showDoneME.
   const epicsIncludingDone = epics.slice();
@@ -10852,7 +10895,7 @@ function priCardHtmlH(t, rank) {
     <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">
       <span class="badge" style="background:${sc.bg};color:${sc.c};font-size:9px;padding:1px 5px">${t.status}</span>
       <span class="badge" style="background:${pc.bg};color:${pc.c};font-size:9px;padding:1px 5px"><span class="pri-dot" style="background:${pc.d}"></span>${t.priority}</span>
-      <span style="display:inline-flex;align-items:center;gap:4px;margin-left:auto">${issueIconRow(t)}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;margin-left:auto">${maintenanceIconHtml(t)}${issueIconRow(t)}</span>
     </div>
   </div>`;
 }
@@ -10969,6 +11012,9 @@ function renderPriBoardHorizontal() {
   if(!showDonePriH) epics = epics.filter(e => normStatus(e.status) !== 'Done');
   if(!showCancelled) epics = epics.filter(e => !isCancelledStatus(e.status)); // v181
   if(unassignedOnly) epics = epics.filter(e => e.assignee === 'Unassigned' || (byEpic[e.key]||[]).length > 0);
+  // v201: maintenance filter for epics (horizontal view)
+  if(maintenanceFilter === 'hide') epics = epics.filter(e => !isMaintenanceIssue(e));
+  if(maintenanceFilter === 'only') epics = epics.filter(e => isMaintenanceIssue(e));
   // v177: apply user-saved order (within each band the push order is preserved)
   epics = applyPriEpicOrder(epics);
 
@@ -11019,7 +11065,10 @@ function renderPriBoardHorizontal() {
 
     // For each epic in this band: one row: [Epic card] → [Task1] [Task2] ...
     bandEpics.forEach(epic => {
-      const epicTasks = byEpic[epic.key] || [];
+      let epicTasks = byEpic[epic.key] || [];
+      // v201: maintenance filter for individual tasks within epics
+      if(maintenanceFilter === 'hide') epicTasks = epicTasks.filter(t => !isMaintenanceIssue(t));
+      if(maintenanceFilter === 'only') epicTasks = epicTasks.filter(t => isMaintenanceIssue(t));
       const sc = SC[epic.status] || SC.Backlog;
       const initiative = priEpics.find(e => e.key === epic.parent_key);
       const legend = initiative ? priEpics.find(e => e.key === initiative.parent_key) : null;
@@ -11039,6 +11088,8 @@ function renderPriBoardHorizontal() {
       // v97: whole epic card is clickable (was just the summary line). Lets the
       // user click any blank part of the card to open the detail panel and
       // edit the hierarchy. Missing Legend/Initiative show "+ Set …" pills.
+      const projCol = getProjectColor(epic.key);
+      const epicMaintHtml = isMaintenanceIssue(epic) ? `<span title="Maintenance / Recurring" style="font-size:10px;color:#8B7520">🔁</span>` : '';
       const epicCardHtml = `
         <div class="pri-epic-card-h" data-epic-key="${epic.key}" draggable="true"
           ondragstart="priEpicDragStart(event,'${epic.key}')" ondragend="priEpicDragEnd(event)"
@@ -11046,7 +11097,14 @@ function renderPriBoardHorizontal() {
           ondragleave="priEpicCardDragLeave(event)"
           ondrop="priEpicCardDrop(event,'${epic.key}')"
           onclick="openPane('${epic.key}')"
-          title="Drag onto another epic to reorder. Drag to a different priority band header to change priority. Click to open ${epic.key}." style="width:280px;min-width:280px;flex-shrink:0;background:${epicCardBg};border:1px solid #C8E6F7;border-left:3px solid ${epicCardBorder};border-radius:8px;padding:8px 10px;margin-right:10px;display:flex;flex-direction:column;gap:4px;position:sticky;left:0;z-index:2;box-shadow:2px 0 6px -2px rgba(0,0,0,0.12);cursor:grab${epicOpacity}">
+          title="Drag onto another epic to reorder. Drag to a different priority band header to change priority. Click to open ${epic.key}." style="width:280px;min-width:280px;flex-shrink:0;background:${epicCardBg};border:1px solid #C8E6F7;border-left:3px solid ${epicCardBorder};border-radius:8px;padding:0;margin-right:10px;display:flex;flex-direction:column;position:sticky;left:0;z-index:2;box-shadow:2px 0 6px -2px rgba(0,0,0,0.12);cursor:grab${epicOpacity};overflow:hidden">
+          <!-- v201: project-coloured top band -->
+          <div style="background:${projCol.bg};border-bottom:2px solid ${projCol.border};padding:5px 10px 4px;display:flex;align-items:center;gap:4px">
+            <a href="${BASE()}${epic.key}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;font-family:monospace;color:${projCol.text};font-weight:700;text-decoration:none">${epic.key}</a>
+            <span style="font-size:11px;font-weight:600;color:${projCol.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${epic.summary.slice(0,30)}${epic.summary.length>30?'…':''}</span>
+            ${epicMaintHtml}
+          </div>
+          <div style="padding:6px 10px 8px;display:flex;flex-direction:column;gap:4px">
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
             ${legend ? `<a href="${BASE()}${legend.key}" target="_blank" onclick="event.stopPropagation()"
               style="font-size:9px;font-weight:700;color:#9A4500;background:#FFF0E6;padding:1px 5px;border-radius:3px;text-decoration:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block"
@@ -11057,10 +11115,6 @@ function renderPriBoardHorizontal() {
               title="${(initiative.summary||'').replace(/"/g,'&quot;')}">${initiative.key} · ${(initiative.summary||'').slice(0,14)}${(initiative.summary||'').length>14?'…':''}</a>` :
               `<span onclick="event.stopPropagation();openPane('${epic.key}')" style="font-size:9px;font-weight:700;color:#6B3FA0;background:#F3EEFF;padding:1px 5px;border-radius:3px;cursor:pointer;border:1px dashed #8F6AC8" title="No Initiative linked — click to set">+ Set Initiative</span>`}
           </div>
-          <div style="display:flex;align-items:baseline;gap:4px">
-            <a href="${BASE()}${epic.key}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;font-family:monospace;color:#257AA5;font-weight:700;text-decoration:none">${epic.key}</a>
-          </div>
-          <div style="${epicSumStyle}">${epic.summary}</div>
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:auto">
             <span class="badge" style="background:${sc.bg};color:${sc.c};font-size:9px;padding:1px 5px">${epic.status}</span>
             ${pbadge(epic.priority)}
@@ -11068,6 +11122,7 @@ function renderPriBoardHorizontal() {
             <span style="font-size:10px;color:#9EA0A4;margin-left:auto">${epicTasks.length}</span>
             <button onclick="event.stopPropagation();quickAddTaskFromBtn(this)" data-epic-key="${epic.key}" data-proj="${_escHtml(epic.project||'')}"
               style="background:#125462;border:none;color:#fff;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Add task">+</button>
+          </div>
           </div>
         </div>`;
 
@@ -15251,6 +15306,69 @@ async function bulkRenameLabel(oldLabel, newLabel){
   }
   renderMain();
   if(openIssue) renderPaneMain();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v201: MAINTENANCE / RECURRING FLAGS
+   Mark epics or individual tasks as maintenance/recurring.
+   Children of a maintenance-flagged epic inherit the flag.
+   ══════════════════════════════════════════════════════════════════════ */
+
+// Check if an issue is maintenance (directly flagged or parent epic is flagged)
+function isMaintenanceIssue(issue){
+  if(!issue) return false;
+  if(maintenanceKeys.has(issue.key)) return true;
+  // Check parent chain
+  if(issue.parent_key && maintenanceKeys.has(issue.parent_key)) return true;
+  // Check grandparent for sub-tasks under a task under a maintenance epic
+  const parent = allIssues.find(x => x.key === issue.parent_key);
+  if(parent && parent.parent_key && maintenanceKeys.has(parent.parent_key)) return true;
+  return false;
+}
+
+function toggleMaintenance(key){
+  if(maintenanceKeys.has(key)) maintenanceKeys.delete(key);
+  else maintenanceKeys.add(key);
+  saveAll();
+  renderMain();
+  if(openIssue) renderPaneMain();
+}
+
+function onMaintenanceFilterChange(val){
+  maintenanceFilter = val || 'all';
+  saveAll();
+  renderMain();
+}
+
+// Recurring icon HTML for cards
+function maintenanceIconHtml(issue){
+  if(!isMaintenanceIssue(issue)) return '';
+  const inherited = !maintenanceKeys.has(issue.key);
+  return `<span title="${inherited ? 'Maintenance (inherited from parent)' : 'Maintenance / Recurring'}" style="font-size:11px;color:#8B7520;cursor:default">🔁</span>`;
+}
+
+// Project color palette for epic top bands
+const _projColors = {};
+const _projColorPalette = [
+  {bg:'#E8F0FE',border:'#4285F4',text:'#1A56DB'}, // blue
+  {bg:'#E6F9EE',border:'#34A853',text:'#1B7A3D'}, // green
+  {bg:'#FFF3E0',border:'#F9AB00',text:'#9A6700'}, // amber
+  {bg:'#FCE4EC',border:'#EA4335',text:'#C5221F'}, // red
+  {bg:'#F3E8FF',border:'#A259FF',text:'#7B2FF0'}, // purple
+  {bg:'#E0F7FA',border:'#00ACC1',text:'#00838F'}, // teal
+  {bg:'#FFF8E1',border:'#FFB300',text:'#8B6914'}, // gold
+  {bg:'#EFEBE9',border:'#8D6E63',text:'#5D4037'}, // brown
+];
+let _projColorIdx = 0;
+function getProjectColor(projKey){
+  if(!projKey) return _projColorPalette[0];
+  // Extract the prefix (e.g. "MKT" from "MKT-530")
+  const prefix = projKey.split('-')[0];
+  if(!_projColors[prefix]){
+    _projColors[prefix] = _projColorPalette[_projColorIdx % _projColorPalette.length];
+    _projColorIdx++;
+  }
+  return _projColors[prefix];
 }
 
 /* ══════════════════════════════════════════════════════════════════════
