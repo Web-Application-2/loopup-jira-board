@@ -517,19 +517,13 @@ button,select,textarea,input{font-family:inherit}
 .recent-filter-bar button{font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px;border:1px solid #C9CACC;background:#fff;color:#5D7987;cursor:pointer}
 .recent-filter-bar button.active{background:#125462;color:#fff;border-color:#125462}
 
-/* v200: Tag Me button — pennant/tag shape with CSS triangles for full outline */
-.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:4px;border:1px solid #D4B44A;background:#FFF8E1;color:#8B7520;cursor:pointer;font-size:9px;font-weight:700;line-height:1;padding:0 3px;flex-shrink:0;transition:.12s;white-space:nowrap;letter-spacing:.3px}
-.tag-me-btn.has-text{position:relative;width:auto;height:auto;padding:4px 10px 4px 14px;border-radius:0 4px 4px 0;gap:3px;font-size:11px;letter-spacing:0;margin-left:10px;border:1px solid #D4B44A;border-left:none;background:#FFF8E1}
-.tag-me-btn.has-text::before{content:'';position:absolute;left:-9px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:calc(50% + 1px) solid transparent;border-bottom:calc(50% + 1px) solid transparent;border-right:9px solid #D4B44A}
-.tag-me-btn.has-text::after{content:'';position:absolute;left:-7px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:calc(50%) solid transparent;border-bottom:calc(50%) solid transparent;border-right:7px solid #FFF8E1}
-.tag-me-btn:hover{border-color:#2E99CE;color:#2E99CE;background:#E0F0F8}
-.tag-me-btn.has-text:hover{border-color:#2E99CE;border-left:none;background:#E0F0F8}
-.tag-me-btn.has-text:hover::before{border-right-color:#2E99CE}
-.tag-me-btn.has-text:hover::after{border-right-color:#E0F0F8}
-.tag-me-btn.is-tagged{background:#E0F0F8;border-color:#2E99CE;color:#2E99CE;font-size:11px}
-.tag-me-btn.has-text.is-tagged{border-color:#2E99CE;border-left:none;background:#E0F0F8}
-.tag-me-btn.has-text.is-tagged::before{border-right-color:#2E99CE}
-.tag-me-btn.has-text.is-tagged::after{border-right-color:#E0F0F8}
+/* v200: Tag Me button */
+.tag-me-btn{display:inline-flex;align-items:center;justify-content:center;height:20px;border:none;background:#FFF8E1;color:#8B7520;cursor:pointer;font-size:10px;font-weight:700;line-height:1;padding:0 8px 0 14px;flex-shrink:0;transition:.12s;white-space:nowrap;letter-spacing:.3px;clip-path:polygon(8px 0,100% 0,100% 100%,8px 100%,0 50%);position:relative;border-radius:0 3px 3px 0}
+.tag-me-btn::before{content:'';position:absolute;inset:0;border-radius:0 3px 3px 0;clip-path:polygon(8px 0,100% 0,100% 100%,8px 100%,0 50%);box-shadow:inset 0 0 0 1px #D4B44A;pointer-events:none}
+.tag-me-btn:hover{background:#E0F0F8;color:#2E99CE}
+.tag-me-btn:hover::before{box-shadow:inset 0 0 0 1px #2E99CE}
+.tag-me-btn.is-tagged{background:#E0F0F8;color:#2E99CE}
+.tag-me-btn.is-tagged::before{box-shadow:inset 0 0 0 1px #2E99CE}
 
 /* v200: Priority warning modal */
 .pri-warn-overlay{position:fixed;inset:0;z-index:800;background:rgba(41,46,55,.5);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -908,7 +902,7 @@ button,select,textarea,input{font-family:inherit}
        search box's flex:1 was the only thing pushing them right, and removing it collapsed them left. -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto">
     <a id="jira-link" href="https://loopup.atlassian.net" target="_blank" style="font-size:12px;color:#2E99CE;font-weight:700;display:none;white-space:nowrap">Jira ↗</a>
-    <span style="font-size:11px;color:#C9CACC;white-space:nowrap">v200</span>
+    <span style="font-size:11px;color:#C9CACC;white-space:nowrap">v198</span>
     <span id="sync-time" style="font-size:11px;color:#C9CACC;display:none"></span>
     <button class="icon-btn" id="refresh-btn" onclick="doRefresh()">↻ Refresh</button>
     <button class="primary-btn" onclick="openCreate(null)">+ Create</button>
@@ -6140,14 +6134,12 @@ function renderPaneLabels(issue){
     : '<span class="pane-lbl-empty">No labels yet.</span>';
   const tagBtn = typeof tagMePaneHtml === 'function' ? tagMePaneHtml(issue) : '';
   const setupLink = defaultTag ? `<button onclick="event.stopPropagation();openTagSetup()" style="font-size:10px;color:#9EA0A4;background:none;border:none;cursor:pointer;padding:2px 4px" title="Change default tag">⚙ ${_escHtml(defaultTag)}</button>` : `<button onclick="event.stopPropagation();openTagSetup()" style="font-size:10px;color:#2E99CE;background:none;border:none;cursor:pointer;padding:2px 4px" title="Set up quick tag">⚙ Set tag</button>`;
-  /* v152: tag button moved after Add-label so the saved tag isn't mistaken
-     for an actual label on the issue. */
   return `<div class="pane-lbl-wrap" id="pane-lbl-wrap">
     ${chips}
+    ${tagBtn}
     <span id="pane-lbl-addslot">
       <button class="pane-lbl-addbtn" onclick="event.stopPropagation();paneOpenLabelInput('${issue.key}')">＋ Add label</button>
     </span>
-    ${tagBtn}
     ${setupLink}
   </div>`;
 }
@@ -15192,7 +15184,7 @@ function tagMePaneHtml(issue){
   if(!defaultTag) return `<button class="tag-me-btn" onclick="event.stopPropagation();openTagSetup()" title="Set up your default tag" style="margin-left:4px">🏷</button>`;
   const labels = Array.isArray(issue.labels) ? issue.labels : [];
   const isTagged = labels.some(l => l.toLowerCase() === defaultTag.toLowerCase());
-  return `<button class="tag-me-btn has-text ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMePane()" title="${isTagged?'Remove your tag ('+defaultTag+')':'Quick add '+defaultTag+' label'}" style="margin-left:4px">${isTagged?'★ '+defaultTag:'☆ '+defaultTag}</button>`;
+  return `<button class="tag-me-btn ${isTagged?'is-tagged':''}" onclick="event.stopPropagation();toggleTagMePane()" title="${isTagged?'Remove your tag ('+defaultTag+')':'Quick add '+defaultTag+' label'}" style="margin-left:4px">${isTagged?'★ '+defaultTag:defaultTag}</button>`;
 }
 
 async function toggleTagMePane(){
