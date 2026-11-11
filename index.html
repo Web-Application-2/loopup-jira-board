@@ -905,7 +905,7 @@ button,select,textarea,input{font-family:inherit}
        search box's flex:1 was the only thing pushing them right, and removing it collapsed them left. -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto">
     <a id="jira-link" href="https://loopup.atlassian.net" target="_blank" style="font-size:12px;color:#2E99CE;font-weight:700;display:none;white-space:nowrap">Jira ↗</a>
-    <span style="font-size:11px;color:#C9CACC;white-space:nowrap">v201</span>
+    <span style="font-size:11px;color:#C9CACC;white-space:nowrap">v202</span>
     <span id="sync-time" style="font-size:11px;color:#C9CACC;display:none"></span>
     <button class="icon-btn" id="refresh-btn" onclick="doRefresh()">↻ Refresh</button>
     <button class="primary-btn" onclick="openCreate(null)">+ Create</button>
@@ -5467,18 +5467,17 @@ async function renderPaneMain(){
       <div class="pane-section-title">Labels</div>
       ${renderPaneLabels(i)}
     </div>
-    <!-- v201: Maintenance / Recurring toggle -->
+    <!-- v202: Maintenance — clean inline toggle matching other pane fields -->
     <div class="pane-section">
-      <div class="pane-section-title" style="display:flex;align-items:center;gap:8px">
-        <span>Maintenance</span>
-        <span style="font-size:11px;color:#9EA0A4">${isMaintenanceIssue(i) && !maintenanceKeys.has(i.key) ? '(inherited from parent)' : ''}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button onclick="event.stopPropagation();toggleMaintenance('${i.key}')"
-          style="font-size:12px;padding:5px 14px;border-radius:6px;cursor:pointer;font-weight:600;border:1px solid ${maintenanceKeys.has(i.key)?'#8B7520':'#C9CACC'};background:${maintenanceKeys.has(i.key)?'#FFF8E0':'#F7F8F9'};color:${maintenanceKeys.has(i.key)?'#8B7520':'#5D7987'}">
-          ${maintenanceKeys.has(i.key) ? '🔁 Maintenance (click to remove)' : '🔁 Mark as Maintenance'}
-        </button>
-        ${isMaintenanceIssue(i) ? '<span style="font-size:11px;color:#8B7520;font-weight:600">🔁 Active</span>' : ''}
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;font-weight:600;color:#5D7987;min-width:90px">Maintenance</span>
+        <label onclick="event.stopPropagation()" style="position:relative;display:inline-block;width:34px;height:18px;cursor:pointer;flex-shrink:0">
+          <input type="checkbox" ${maintenanceKeys.has(i.key)?'checked':''} onchange="event.stopPropagation();toggleMaintenance('${i.key}')" style="opacity:0;width:0;height:0;position:absolute">
+          <span style="position:absolute;inset:0;border-radius:10px;transition:background .2s;background:${maintenanceKeys.has(i.key)?'#8B7520':'#C9CACC'}"></span>
+          <span style="position:absolute;top:2px;left:${maintenanceKeys.has(i.key)?'18px':'2px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)"></span>
+        </label>
+        ${maintenanceKeys.has(i.key) ? '<span style="font-size:11px;color:#8B7520;font-weight:600">🔁 On</span>' : '<span style="font-size:11px;color:#9EA0A4">Off</span>'}
+        ${isMaintenanceIssue(i) && !maintenanceKeys.has(i.key) ? '<span style="font-size:10px;color:#9EA0A4;font-style:italic">inherited from parent</span>' : ''}
       </div>
     </div>
     <div class="pane-section">
@@ -10166,40 +10165,42 @@ function renderPriBoard() {
     const epicIsDone = normStatus(epic.status) === 'Done' ||
       (epicTasks.length > 0 && epicTasks.every(t => normStatus(t.status) === 'Done'));
     if(epicIsDone) col.classList.add('epic-done');
+    const vProjCol = getProjectColor(epic.key);
+    const vMaintIcon = isMaintenanceIssue(epic) ? `<span title="Maintenance / Recurring" style="font-size:10px;color:${vProjCol.text};opacity:.7">🔁</span>` : '';
     col.innerHTML = `
-      <!-- v97: header is fully clickable. Clicking anywhere on the header (other
-           than the inner anchors / + button which stopPropagation) opens the
-           Epic/Milestone in the detail card so the user can assign Legend +
-           Initiative parents via the v89 parent picker if they're missing.
-           v177: ⋮⋮ drag handle in the top-right reorders columns horizontally. -->
-      <div class="pri-epic-hdr" onclick="openPane('${epic.key}')" title="Open ${epic.key} to edit hierarchy / parent" style="cursor:pointer;position:relative;${epicIsDone ? 'background:#F0FAEC' : ''}">
+      <!-- v201: compact epic column header with project-coloured band -->
+      <div class="pri-epic-hdr" onclick="openPane('${epic.key}')" title="Open ${epic.key} to edit hierarchy / parent" style="cursor:pointer;position:relative;padding:0;overflow:hidden;${epicIsDone ? 'background:#F0FAEC' : ''}">
         <span class="pri-col-drag-handle" draggable="true"
           ondragstart="priColDragStart(event,'${epic.key}')"
           ondragend="priColDragEnd(event)"
           onclick="event.stopPropagation()"
           title="Drag to reorder this Epic column"
           style="position:absolute;top:6px;right:6px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:grab;color:#9EA0A4;font-size:14px;line-height:1;border-radius:4px;background:rgba(255,255,255,.7);user-select:none;z-index:3" onmouseover="this.style.background='#E4E6E8';this.style.color='#5D7987'" onmouseout="this.style.background='rgba(255,255,255,.7)';this.style.color='#9EA0A4'">⋮⋮</span>
-        <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap">
-          ${legend ? `<a href="${BASE()}${legend.key}" target="_blank" onclick="event.stopPropagation()"
-            style="font-size:9px;font-weight:700;color:#9A4500;background:#FFF0E6;padding:1px 6px;border-radius:3px;text-decoration:none;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block"
-            title="${legend.summary||''}">${legend.key} · ${(legend.summary||'').slice(0,18)}${(legend.summary||'').length>18?'…':''}</a>` :
-            `<span onclick="event.stopPropagation();openPane('${epic.key}')" style="font-size:9px;font-weight:700;color:#9A4500;background:#FFF0E6;padding:1px 6px;border-radius:3px;cursor:pointer;border:1px dashed #E08000" title="No Legend linked — click to set">+ Set Legend</span>`}
-          ${initiative ? `<a href="${BASE()}${initiative.key}" target="_blank" onclick="event.stopPropagation()"
-            style="font-size:9px;font-weight:700;color:#6B3FA0;background:#F3EEFF;padding:1px 6px;border-radius:3px;text-decoration:none;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block"
-            title="${initiative.summary||''}">${initiative.key} · ${(initiative.summary||'').slice(0,18)}${(initiative.summary||'').length>18?'…':''}</a>` :
-            `<span onclick="event.stopPropagation();openPane('${epic.key}')" style="font-size:9px;font-weight:700;color:#6B3FA0;background:#F3EEFF;padding:1px 6px;border-radius:3px;cursor:pointer;border:1px dashed #8F6AC8" title="No Initiative linked — click to set">+ Set Initiative</span>`}
+        <!-- Project-coloured top band: key, task count, maintenance, +, avatar -->
+        <div style="background:${vProjCol.bg};border-bottom:2px solid ${vProjCol.border};padding:4px 10px;display:flex;align-items:center;gap:5px">
+          <a href="${BASE()}${epic.key}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;font-family:monospace;color:${vProjCol.text};font-weight:700;text-decoration:none">${epic.key}</a>
+          <span style="font-size:10px;color:${vProjCol.text};opacity:.7">${epicTasks.length} task${epicTasks.length!==1?'s':''}</span>
+          ${vMaintIcon}
+          <span style="margin-left:auto;display:flex;align-items:center;gap:4px">
+            <button onclick="event.stopPropagation();quickAddTaskFromBtn(this)" data-epic-key="${epic.key}" data-proj="${_escHtml(epic.project||'')}"
+              style="background:${vProjCol.border};border:none;color:#fff;border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Add task">+</button>
+            ${ava(epic.assignee, 18)}
+          </span>
         </div>
-        <div class="pri-epic-title">
-          <a href="${BASE()}${epic.key}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;font-family:monospace;color:#257AA5;font-weight:700">${epic.key}</a>
-          ${epic.summary}
-        </div>
-        <div class="pri-epic-meta">
-          <span class="badge" style="background:${statusCfg.bg};color:${statusCfg.c}">${epic.status}</span>
+        <!-- Summary -->
+        <div class="pri-epic-title" style="padding:4px 10px 2px">${epic.summary}</div>
+        <!-- Compact meta: status, priority, legend, initiative -->
+        <div style="padding:0 10px 5px;display:flex;align-items:center;gap:3px;flex-wrap:wrap">
+          <span class="badge" style="background:${statusCfg.bg};color:${statusCfg.c};font-size:9px;padding:1px 5px">${epic.status}</span>
           ${pbadge(epic.priority)}
-          ${ava(epic.assignee, 20)}
-          <span style="font-size:10px;color:#9EA0A4;margin-left:auto">${epicTasks.length} tasks</span>
-          <button onclick="event.stopPropagation();quickAddTaskFromBtn(this)" data-epic-key="${epic.key}" data-proj="${_escHtml(epic.project||'')}"
-            style="background:#125462;border:none;color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:4px" title="Add task to this epic">+</button>
+          ${legend ? `<a href="${BASE()}${legend.key}" target="_blank" onclick="event.stopPropagation()"
+            style="font-size:8px;font-weight:700;color:#9A4500;background:#FFF0E6;padding:1px 4px;border-radius:3px;text-decoration:none;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block"
+            title="${(legend.summary||'').replace(/"/g,'&quot;')}">${legend.key}</a>` :
+            `<span onclick="event.stopPropagation();openPane('${epic.key}')" style="font-size:8px;font-weight:700;color:#9A4500;background:#FFF0E6;padding:1px 4px;border-radius:3px;cursor:pointer;border:1px dashed #E08000" title="No Legend — click to set">+ Leg</span>`}
+          ${initiative ? `<a href="${BASE()}${initiative.key}" target="_blank" onclick="event.stopPropagation()"
+            style="font-size:8px;font-weight:700;color:#6B3FA0;background:#F3EEFF;padding:1px 4px;border-radius:3px;text-decoration:none;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block"
+            title="${(initiative.summary||'').replace(/"/g,'&quot;')}">${initiative.key}</a>` :
+            `<span onclick="event.stopPropagation();openPane('${epic.key}')" style="font-size:8px;font-weight:700;color:#6B3FA0;background:#F3EEFF;padding:1px 4px;border-radius:3px;cursor:pointer;border:1px dashed #8F6AC8" title="No Initiative — click to set">+ Init</span>`}
         </div>
       </div>
       <div class="pri-epic-body pri-drop-zone" data-epic="${epic.key}"
@@ -10669,6 +10670,8 @@ async function renderPriEpicMatrix(){
           const taskCount = (priIssues || []).filter(t => t.parent_key === epic.key).length;
           const stateCls = cardStateClass(epic, false);
           const safeKey = epic.key.replace(/'/g, "\\'");
+          const mProjCol = getProjectColor(epic.key);
+          const mMaintIcon = isMaintenanceIssue(epic) ? '<span title="Maintenance / Recurring" style="font-size:10px;color:' + mProjCol.text + ';opacity:.7">🔁</span>' : '';
           html += '<div class="pri-emc ' + stateCls + '" draggable="true"'
                + ' data-key="' + _escHtml(epic.key) + '"'
                + ' ondragstart="priEpicMatrixDragStart(event,\'' + safeKey + '\')"'
@@ -10677,15 +10680,15 @@ async function renderPriEpicMatrix(){
                + ' ondragleave="priEpicMatrixCardDragLeave(event)"'
                + ' ondrop="priEpicMatrixCardDrop(event,\'' + safeKey + '\',\'' + statParam + '\',\'' + priParam + '\')"'
                + ' onclick="openPane(\'' + safeKey + '\')"'
+               + ' style="padding:0;overflow:hidden"'
                + ' title="Drag to a different cell to change priority/status. Drag onto another epic in the same cell to reorder. Click to open ' + _escHtml(epic.key) + '.">'
-               + '<div style="display:flex;align-items:center;gap:5px">'
-               + '<a href="' + BASE() + epic.key + '" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;font-family:monospace;color:#257AA5;font-weight:700;text-decoration:none">' + _escHtml(epic.key) + '</a>'
-               + '<span style="font-size:10px;color:#9EA0A4;margin-left:auto">' + taskCount + ' task' + (taskCount===1?'':'s') + '</span>'
+               + '<div style="background:' + mProjCol.bg + ';border-bottom:2px solid ' + mProjCol.border + ';padding:3px 8px;display:flex;align-items:center;gap:4px">'
+               + '<a href="' + BASE() + epic.key + '" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;font-family:monospace;color:' + mProjCol.text + ';font-weight:700;text-decoration:none">' + _escHtml(epic.key) + '</a>'
+               + '<span style="font-size:10px;color:' + mProjCol.text + ';opacity:.7">' + taskCount + '</span>'
+               + mMaintIcon
+               + '<span style="margin-left:auto">' + ava(epic.assignee, 18) + '</span>'
                + '</div>'
-               + '<div class="pri-emc-sum" style="font-size:11px;font-weight:600;line-height:1.3">' + _escHtml(epic.summary || '') + '</div>'
-               + '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
-               + ava(epic.assignee, 18)
-               + '</div>'
+               + '<div class="pri-emc-sum" style="font-size:11px;font-weight:600;line-height:1.3;padding:4px 8px">' + _escHtml(epic.summary || '') + '</div>'
                + '</div>';
         });
       }
