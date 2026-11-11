@@ -1557,6 +1557,26 @@ async function setActiveFlag(name,key){activeFlags[name]=key;await kvSet("active
 async function clearActiveFlag(name){delete activeFlags[name];await kvSet("active:"+name,"");renderMain();}
 async function toggleActive(name,key){activeFlags[name]===key?await clearActiveFlag(name):await setActiveFlag(name,key);}
 
+/* ══ KV: per-user defaultTag ══ */
+async function saveDefaultTagToKV(){
+  if(!cfg.email || !defaultTag) return;
+  try { await kvSet('usertag:'+cfg.email, defaultTag); } catch{}
+}
+async function loadDefaultTagFromKV(){
+  if(!cfg.email) return;
+  try {
+    const r = await fetch(KV+'?action=getall');
+    if(!r.ok) return;
+    const data = await r.json();
+    const val = data['usertag:'+cfg.email];
+    if(typeof val === 'string' && val) {
+      defaultTag = val;
+      saveAll();
+      appLogMsg('info','tag','Restored defaultTag from KV: '+val);
+    }
+  } catch{}
+}
+
 /* ══ SETUP ══ */
 function showSetup(){
   loadAll(); // Ensure latest saved values are loaded
@@ -11537,6 +11557,10 @@ if(cfg.email && cfg.token && cfg.url){
         }
       } catch {}
     }
+    // v200: restore defaultTag from KV if localStorage lost it
+    if(!defaultTag && cfg.email) {
+      try { await loadDefaultTagFromKV(); } catch{}
+    }
     if(!currentProjectGroup && Object.keys(projectGroups).length === 0){
       // No project groups exist yet - don't force modal, just proceed
     } else if(!currentProjectGroup && Object.keys(projectGroups).length > 0){
@@ -15121,6 +15145,7 @@ function saveTagSetup(){
   const oldTag = defaultTag;
   defaultTag = val;
   saveAll();
+  saveDefaultTagToKV(); // persist to KV so it survives across browsers/devices
 
   // Check for bulk rename
   const renameCheck = document.getElementById('tag-rename-check');
